@@ -14,8 +14,8 @@ from data.sources.base_dataset import BaseDataset
 
 
 class Re10kDataset(BaseDataset):
-    ROOT_PATH = os.environ.get("LAGERNVS_DATA_ROOT", "./data") + "/re10k"
-
+    # ROOT_PATH = os.environ.get("LAGERNVS_DATA_ROOT", "./data") + "/re10k"
+    ROOT_PATH = "/home/jovyan/sungpyo/dataset/lagernvs/re10k"
     def __init__(
         self,
         view_selector,

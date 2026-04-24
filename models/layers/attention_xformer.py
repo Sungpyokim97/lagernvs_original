@@ -7,7 +7,6 @@
 import einops
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import xformers.ops as xops
 
 
@@ -118,23 +117,22 @@ class Attention(nn.Module):
                 nh=self.num_heads,
             )
             # flash attention does not support custom attention mask
-            # use standard pytorch sdpa
-            x = F.scaled_dot_product_attention(
-                q.transpose(1, 2),
-                k.transpose(1, 2),
-                v.transpose(1, 2),
-                attn_mask=attn_bias,
-                dropout_p=self.attn_dropout if self.training else 0.0,
-            ).transpose(1, 2)
+            x = xops.memory_efficient_attention(
+                q,
+                k,
+                v,
+                attn_bias=attn_bias,
+                p=self.attn_dropout if self.training else 0.0,
+            )
         else:
-            # use standard pytorch sdpa
-            x = F.scaled_dot_product_attention(
-                q.transpose(1, 2),
-                k.transpose(1, 2),
-                v.transpose(1, 2),
-                attn_mask=None,
-                dropout_p=self.attn_dropout if self.training else 0.0,
-            ).transpose(1, 2)
+            x = xops.memory_efficient_attention(
+                q,
+                k,
+                v,
+                attn_bias=attn_bias,
+                p=self.attn_dropout if self.training else 0.0,
+                op=self.flash_attn_ops,
+            )
 
         x = einops.rearrange(x, "b n h d -> b n (h d)")
 

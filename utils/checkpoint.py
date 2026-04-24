@@ -115,7 +115,7 @@ def load_checkpoint(
         if misc.is_main_process():
             print(f"Loading checkpoint from {explicit_path}")
 
-        checkpoint = torch.load(resolved_path, map_location="cpu")
+        checkpoint = torch.load(resolved_path, map_location="cpu", weights_only=False)
         _load_model_from_checkpoint(checkpoint, model, strict)
         start_iter = checkpoint.get("iter_idx", -1) + 1
 
@@ -128,7 +128,7 @@ def load_checkpoint(
 
         if os.path.exists(latest_path):
             # Priority 2: Load local checkpoint (preemption recovery)
-            checkpoint = torch.load(latest_path, map_location="cpu")
+            checkpoint = torch.load(latest_path, map_location="cpu", weights_only=False)
             _load_model_from_checkpoint(checkpoint, model, strict)
 
             if not test_only:

@@ -7,7 +7,7 @@ opt:
   weight_decay: 0.05
   num_iter_total: 100001
   # batch_size: 256
-  batch_size: 6
+  batch_size: 8
   batch_size_test: 16
   target_has_input_p: 1.0
   l2_loss_weight: 1.0
@@ -45,13 +45,15 @@ data:
   - 1.0
   - 1.0
   im_size_hw:
-  - 256
-  - 256
+  - 512
+  - 512
   num_views: 10
   zero_out_cam_cond_p: 0.0
   num_tgt_views: 6
   view_to_sample_prob:
     - 2,1
+
+checkpoint_path : /home/jovyan/sungpyo/lagernvs/official_checkpoints/lagernvs_re10k_2v_256.pt
 
 test_data:
   dataset_names:
@@ -61,7 +63,8 @@ test_data:
   zero_out_cam_cond_p:
   - 0.0
   test_view_indices_paths:
-  - assets/re10k_2v.json
+  # - assets/re10k_2v.json
+  - assets/re10k_2v_filtered.json
   num_cond_views:
   - 2
 
@@ -69,7 +72,7 @@ view_sampler:
   train_method: bounded_interp
   test_method: fixed
 
-log_dir: ./output
+log_dir: ./output/resize_512_128_no_vggt_freeze/
 
 eval:
   log_iter: 50

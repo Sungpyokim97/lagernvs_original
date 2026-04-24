@@ -1,4 +1,41 @@
-__pycache__/
-*/__pycache__/
-*/*/__pycache__/
+# ==================================
+# 1. Output & Pretrained Weights
+# ==================================
 output/
+pretrained/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+
+# ==================================
+# 2. Logs & Temporary Files
+# ==================================
+logs/
+log/
+tb_logs/
+runs/
+*.log
+train_command.txt
+process_data.txt
+
+# ==================================
+# 3. Python Cache & Environment
+# ==================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# ==================================
+# 4. OS & Editor Settings (Optional)
+# ==================================
+.DS_Store
+.vscode/     # 만약 launch.json 등 VS Code 설정을 공유하고 싶다면 이 줄을 지우거나 주석 처리하세요.
+.idea/

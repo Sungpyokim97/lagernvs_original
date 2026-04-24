@@ -150,15 +150,7 @@ class CrossAttentionRendererCore(nn.Module):
 
     def forward(self, x, rec_tokens):
         for renderer_block_idx in range(self.depth):
-            if self.training:
-                x = torch.utils.checkpoint.checkpoint(
-                    self.renderer_blocks[renderer_block_idx],
-                    x,
-                    rec_tokens,
-                    use_reentrant=False,
-                )
-            else:
-                x = self.renderer_blocks[renderer_block_idx](x, rec_tokens)
+            x = self.renderer_blocks[renderer_block_idx](x, rec_tokens)
 
         return x
 
@@ -182,38 +174,14 @@ class BidirectionalCrossAttentionRendererCore(nn.Module):
 
     def forward(self, x, rec_tokens):
         for renderer_block_idx in range(self.depth - 1):
-            if self.training:
-                x, rec_tokens = torch.utils.checkpoint.checkpoint(
-                    self.renderer_blocks[renderer_block_idx],
-                    x,
-                    rec_tokens,
-                    use_reentrant=False,
-                )
-            else:
-                x, rec_tokens = self.renderer_blocks[renderer_block_idx](x, rec_tokens)
-        if self.training:
-            x = torch.utils.checkpoint.checkpoint(
-                self.renderer_blocks[-1],
-                x,
-                rec_tokens,
-                use_reentrant=False,
-            )
-        else:
-            x = self.renderer_blocks[-1](x, rec_tokens)
+            x, rec_tokens = self.renderer_blocks[renderer_block_idx](x, rec_tokens)
+        x = self.renderer_blocks[-1](x, rec_tokens)
 
         return x
 
 
 class FullAttentionRendererCore(nn.Module):
-    """Rendeif self.training:
-                x = torch.utils.checkpoint.checkpoint(
-                    self.renderer_blocks[renderer_block_idx],
-                    x,
-                    attn_bias=None,
-                    use_reentrant=False,
-                )
-            else:
-                rer transformer with full self-attention over concatenated target and encoder features."""
+    """Renderer transformer with full self-attention over concatenated target and encoder features."""
 
     def __init__(self, hidden_size, num_heads, depth):
         super().__init__()

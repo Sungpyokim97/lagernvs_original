@@ -111,6 +111,13 @@ def main(cfg) -> None:
         pretrained_patch_embed=cfg.model.get("pretrained_patch_embed", False),
     ).to(device)
 
+    # Reconstructor 영역 파라미터 업데이트 제외 설정 Reconstructor 부분을 freeze (Gradient 계산 제외 및 eval 모드 강제)
+    # freeze_reconstructor = True
+    freeze_reconstructor = False
+    if freeze_reconstructor:
+        for param in model.reconstructor.parameters():
+            param.requires_grad = False
+
     if cfg.distributed:
         model = torch.nn.parallel.DistributedDataParallel(
             model, device_ids=[cfg.gpu], find_unused_parameters=cfg.opt.freeze_vggt

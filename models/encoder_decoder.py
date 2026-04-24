@@ -62,7 +62,17 @@ class EncoderDecoder(nn.Module):
 
         v_target = target_rays.shape[1]
 
-        rec_tokens = self.reconstructor(input_images, cam_token)
+        # Reconstructor 부분을 freeze (Gradient 계산 제외 및 eval 모드 강제)
+        # freeze_reconstructor = True
+        freeze_reconstructor = False
+        if freeze_reconstructor:
+            with torch.no_grad():
+                self.reconstructor.eval()
+                rec_tokens = self.reconstructor(input_images, cam_token)
+            rec_tokens = rec_tokens.detach()
+        else:
+            rec_tokens = self.reconstructor(input_images, cam_token)
+            
 
         rec_tokens = einops.rearrange(rec_tokens, "b v_input p c -> b (v_input p) c")
         rec_tokens = einops.repeat(
@@ -77,6 +87,12 @@ class EncoderDecoder(nn.Module):
             )
         else:
             rendered_images = self.renderer(rec_tokens, target_rays, timeit=timeit)
+
+        # Downsize rendered_images to 128x128
+        b, v, c, h_r, w_r = rendered_images.shape
+        # rendered_images = F.interpolate(
+        #     rendered_images.flatten(0, 1), size=(128, 128), mode="bilinear", antialias=True
+        # ).unflatten(0, (b, v))
 
         cond_and_rendered_images = torch.cat([input_images, rendered_images], dim=1)
 
