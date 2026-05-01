@@ -36,8 +36,10 @@ class Renderer(nn.Module):
 
         self.out_channels = out_channels
         self.patch_size = patch_size
+
         tgt_ch = 6
-        self.tgt_embedder = PatchEmbed(patch_size, tgt_ch, hidden_size, bias=False)
+        self.tgt_embedder = PatchEmbed(self.patch_size, tgt_ch, hidden_size, bias=False)
+        self.tgt_embedder_4x4 = PatchEmbed(4, tgt_ch, hidden_size, bias=False)
         self.tgt_norm = nn.LayerNorm(hidden_size, bias=pre_transformer_norm_bias)
 
         self.depth = depth
@@ -68,7 +70,12 @@ class Renderer(nn.Module):
 
         self.final_layer = FinalLayer(
             hidden_size=hidden_size,
-            patch_size=patch_size,
+            patch_size=self.patch_size,
+            out_channels=self.out_channels,
+        )
+        self.final_layer_4x4 = FinalLayer(
+            hidden_size=hidden_size,
+            patch_size=4,
             out_channels=self.out_channels,
         )
         self.output_act = nn.Sigmoid()
@@ -83,10 +90,19 @@ class Renderer(nn.Module):
         nn.init.normal_(wc.view([wc.shape[0], -1]), mean=0.0, std=0.02)
         if self.tgt_embedder.proj.bias is not None:
             nn.init.constant_(self.tgt_embedder.proj.bias, 0)
+            
+        wc_4x4 = self.tgt_embedder_4x4.proj.weight.data
+        nn.init.normal_(wc_4x4.view([wc_4x4.shape[0], -1]), mean=0.0, std=0.02)
+        if self.tgt_embedder_4x4.proj.bias is not None:
+            nn.init.constant_(self.tgt_embedder_4x4.proj.bias, 0)
 
         nn.init.constant_(self.final_layer.linear.weight, 0)
         if self.final_layer.linear.bias is not None:
             nn.init.constant_(self.final_layer.linear.bias, 0)
+            
+        nn.init.constant_(self.final_layer_4x4.linear.weight, 0)
+        if self.final_layer_4x4.linear.bias is not None:
+            nn.init.constant_(self.final_layer_4x4.linear.bias, 0)
 
     def forward(self, rec_tokens, target_rays, timeit=False):
         """
@@ -99,7 +115,16 @@ class Renderer(nn.Module):
             start_time = time.time()
         b, v_target, _, h_tgt, w_tgt = target_rays.shape
         target_rays = einops.rearrange(target_rays, "b v c h w -> (b v) c h w")
-        target_tokens = self.tgt_embedder(target_rays)
+        
+        # Use 4x4 embedder for 64x64 targets to maintain spatial dims, 
+        # else use default patch size
+        if h_tgt == 64 and w_tgt == 64:
+            target_tokens = self.tgt_embedder_4x4(target_rays)
+            current_patch_size = 4
+        else:
+            target_tokens = self.tgt_embedder(target_rays)
+            current_patch_size = self.patch_size
+            
         target_tokens = self.tgt_norm(target_tokens)
 
         register_tokens_target = einops.repeat(
@@ -110,21 +135,32 @@ class Renderer(nn.Module):
 
         x = self.renderer_core(x, rec_tokens)
 
+        # register tokens are not used for final prediction, so we can discard them before the final layer
         x = x[:, self.patch_start_idx :, :]
-        x = self.final_layer(x)
+
+        # start srno frome here
+
+        if current_patch_size == 4:
+            x = self.final_layer_4x4(x)
+        else:
+            x = self.final_layer(x)
+            
         x = self.output_act(x)
 
         rendered_images = einops.rearrange(
             x,
             "(b v) (h w) (p1 p2 c) -> b v c (h p1) (w p2)",
             v=v_target,
-            h=h_tgt // self.patch_size,
-            w=w_tgt // self.patch_size,
-            p1=self.patch_size,
-            p2=self.patch_size,
+            h=h_tgt // current_patch_size,
+            w=w_tgt // current_patch_size,
+            p1=current_patch_size,
+            p2=current_patch_size,
             c=3,
         )
 
+        
+        # 최종 아웃풋 rendered_pixels: B x V_target x 3 x H_lr x W_lr 
+        # random 좌표 sampling 을 input size 만큼 진행후 reshape 한 결과
         if timeit:
             torch.cuda.synchronize()
             end_time = time.time()
