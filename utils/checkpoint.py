@@ -83,7 +83,8 @@ def load_checkpoint(
     optimizer,
     scheduler,
     test_only=False,
-    strict=True,
+    # strict=True,
+    strict=False,  # allow loading weights from checkpoints with different architectures (e.g., for ablation experiments)
 ):
     """
     Load a checkpoint if it exists.

@@ -8,7 +8,7 @@ opt:
   num_iter_total: 100001
   # batch_size: 256
   batch_size: 12
-  batch_size_test: 1
+  batch_size_test: 16
   target_has_input_p: 1.0
   l2_loss_weight: 1.0
   perceptual_loss_weight: 0.5
@@ -22,7 +22,7 @@ opt:
   hold_steps: 0
   lr_scheduler_iter: 100001
   cosine_min_range: 0.0
-  freeze_vggt: true
+  freeze_vggt: false
 
 model:
   model_type: regressive
@@ -72,7 +72,7 @@ view_sampler:
   train_method: bounded_interp
   test_method: fixed
 
-log_dir: ./output/resize_256_64_vggt_freeze/
+log_dir: ./output/resize_256_64_patch4x4_vggt_freeze/
 
 eval:
   log_iter: 50

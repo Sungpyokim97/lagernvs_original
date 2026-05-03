@@ -120,7 +120,7 @@ def main(cfg) -> None:
 
     if cfg.distributed:
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[cfg.gpu], find_unused_parameters=cfg.opt.freeze_vggt
+            model, device_ids=[cfg.gpu], find_unused_parameters=True
         )
 
     # Creates an optimizer that uses weight decay on all
@@ -169,10 +169,32 @@ def main(cfg) -> None:
     start_iter = load_checkpoint(cfg, model, optimizer, scheduler)
 
     print(f"Training model on rank {cfg.rank}", force=True)
+    unfreeze_step = cfg.opt.get("unfreeze_step", 5000)
+
     for iter_idx in range(start_iter, cfg.opt.num_iter_total):
         train_batch, data_iter, epoch_idx = get_next_batch(
             data_iter, dataset, epoch_idx, device
         )
+
+        # train_batch의 첫 번째 원소(images)의 height/width가 64인지 확인합니다.
+        # images.shape: (B, V, C, H, W)
+        images = train_batch[0]
+        apply_freeze = (images.shape[-1] == 64)
+
+        # input size가 64x64 인 경우에만 freeze/unfreeze 적용
+        if apply_freeze:
+            # Step에 따라 Renderer 레이어들(Transformer 블록 등)의 freeze/unfreeze 동적 제어
+            if iter_idx < unfreeze_step:
+                # model.module (DDP) / model (single)
+                target_renderer = model.module.renderer if hasattr(model, "module") else model.renderer
+                for name, param in target_renderer.named_parameters():
+                    if "4x4" not in name:
+                        param.requires_grad = False
+            else:
+                target_renderer = model.module.renderer if hasattr(model, "module") else model.renderer
+                for name, param in target_renderer.named_parameters():
+                    if "4x4" not in name:
+                        param.requires_grad = True
 
         loss_dict, image_ids_train = _train_step(
             model,
