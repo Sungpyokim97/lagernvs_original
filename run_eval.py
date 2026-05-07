@@ -189,17 +189,17 @@ def main(cfg) -> None:
     )
     # comment out if video rendering not required, can be slow
     # when executed for the whole dataset
-    video_dataloader = create_eval_dataloader(cfg, is_video=True)
+    # video_dataloader = create_eval_dataloader(cfg, is_video=True)
 
-    run_video_eval(
-        cfg,
-        model,
-        device,
-        video_dataloader,
-        cfg.eval_data.num_cond_views,
-        cfg.eval_data.dataset_name_log,
-        iteration_idx,
-    )
+    # run_video_eval(
+    #     cfg,
+    #     model,
+    #     device,
+    #     video_dataloader,
+    #     cfg.eval_data.num_cond_views,
+    #     cfg.eval_data.dataset_name_log,
+    #     iteration_idx,
+    # )
 
 
 if __name__ == "__main__":

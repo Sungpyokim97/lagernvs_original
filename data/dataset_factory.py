@@ -4,7 +4,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from data.sources import dl3dv_dataset, re10k_dataset
+from data.sources import dl3dv_dataset, re10k_dataset, acid_dataset
 
 # View selector types used by JointDataset for training.
 SEQUENTIAL = "sequential"
@@ -16,6 +16,7 @@ DENSE_VIDEO = "dense_video"
 _dataset_registry = {
     "re10k": (re10k_dataset.Re10kDataset, SEQUENTIAL),
     "dl3dv": (dl3dv_dataset.Dl3dvDataset, SEQUENTIAL),
+    "acid": (acid_dataset.AcidDataset, SEQUENTIAL),
 }
 
 # Backward-compatible dict: name -> dataset_class

@@ -1,0 +1,31 @@
+module: run_eval
+
+seed: 0
+
+eval_data:
+  dataset_name: acid
+  dataset_name_log: acid_2_view_posed_official
+  zero_out_cam_cond_p: 0.0
+  test_view_indices_path: ./assets/acid_2v_filtered.json
+  num_cond_views: 2
+  video_path_type: bspline_interp_eased
+
+model:
+  arch: 'EncDecVitB/8'
+  attention_to_features_type: full_attention
+
+opt:
+  batch_size: 128
+
+data:
+  im_size_hw:
+  - 256
+  - 256
+  eval_video_length: 100
+
+# Checkpoint is auto-downloaded from HuggingFace on first run.
+# checkpoint_path: hf://facebook/lagernvs_acid_2v_256/model.pt
+# checkpoint_path: /home/jovyan/sungpyo/lagernvs/output/acid_train/checkpoints/checkpoint_latest.pt
+checkpoint_path: /home/jovyan/sungpyo/lagernvs/official_checkpoints/lagernvs_acid_2v_256.pt
+
+log_dir: ./output
