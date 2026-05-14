@@ -14,7 +14,12 @@ from data.sources.base_dataset import BaseDataset
 
 
 class Dl3dvDataset(BaseDataset):
-    ROOT_PATH = os.environ.get("LAGERNVS_DATA_ROOT", "./data") + "/dl3dv"
+    if os.path.exists("/home/jovyan/sungpyo/dataset/lagernvs/dl3dv"):
+        ROOT_PATH = "/home/jovyan/sungpyo/dataset/lagernvs/dl3dv"
+    elif os.path.exists("/home/ksp/NVS/dataset/lagernvs/dl3dv"):
+        ROOT_PATH = "/home/ksp/NVS/dataset/lagernvs/dl3dv"
+    else:
+        ROOT_PATH = os.environ.get("LAGERNVS_DATA_ROOT", "./data") + "/dl3dv"
 
     def __init__(
         self,

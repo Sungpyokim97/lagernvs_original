@@ -14,8 +14,13 @@ from data.sources.base_dataset import BaseDataset
 
 
 class AcidDataset(BaseDataset):
-    # ROOT_PATH = os.environ.get("LAGERNVS_DATA_ROOT", "./data") + "/acid"
-    ROOT_PATH = "/home/jovyan/sungpyo/dataset/lagernvs/acid"
+    if os.path.exists("/home/jovyan/sungpyo/dataset/lagernvs/acid"):
+        ROOT_PATH = "/home/jovyan/sungpyo/dataset/lagernvs/acid"
+    elif os.path.exists("/home/ksp/NVS/dataset/lagernvs/acid"):
+        ROOT_PATH = "/home/ksp/NVS/dataset/lagernvs/acid"
+    else:
+        ROOT_PATH = os.environ.get("LAGERNVS_DATA_ROOT", "./data") + "/acid"
+
     def __init__(
         self,
         view_selector,
