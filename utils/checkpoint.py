@@ -31,10 +31,39 @@ def resolve_checkpoint_path(path):
 def _load_model_from_checkpoint(checkpoint, model, strict):
     """Load model weights from a checkpoint dict."""
     model_dict = checkpoint["model"]
+
+    # Build a filtered state dict that only contains keys matching the
+    # current model in both name and shape. This allows loading checkpoints
+    # that were saved with a different final layer patch size or other
+    # architectural tweaks while keeping compatible weights.
     if hasattr(model, "module"):
-        model.module.load_state_dict(model_dict, strict=strict)
+        target_state = model.module.state_dict()
     else:
-        model.load_state_dict(model_dict, strict=strict)
+        target_state = model.state_dict()
+
+    filtered_dict = {}
+    skipped_keys = []
+    for k, v in model_dict.items():
+        if k in target_state:
+            if v.shape == target_state[k].shape:
+                filtered_dict[k] = v
+            else:
+                skipped_keys.append((k, v.shape, target_state[k].shape))
+        else:
+            skipped_keys.append((k, v.shape, None))
+
+    if misc.is_main_process():
+        if skipped_keys:
+            print("Warning: the following checkpoint keys were skipped due to shape/name mismatch:")
+            for k, src_shape, tgt_shape in skipped_keys:
+                print(f"  {k}: checkpoint shape={src_shape}  current shape={tgt_shape}")
+
+    # Load only the filtered keys (non-strict) so missing keys in the
+    # checkpoint are left as initialized in the model.
+    if hasattr(model, "module"):
+        model.module.load_state_dict(filtered_dict, strict=False)
+    else:
+        model.load_state_dict(filtered_dict, strict=False)
 
 
 def save_checkpoint(cfg, model, optimizer, scheduler, iter_idx, only_latest=False):

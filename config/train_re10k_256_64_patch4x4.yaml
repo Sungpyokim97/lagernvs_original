@@ -7,7 +7,7 @@ opt:
   weight_decay: 0.05
   num_iter_total: 100001
   # batch_size: 256
-  batch_size: 8
+  batch_size: 16
   batch_size_test: 4
   target_has_input_p: 1.0
   l2_loss_weight: 1.0
