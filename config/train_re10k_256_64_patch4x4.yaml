@@ -7,8 +7,8 @@ opt:
   weight_decay: 0.05
   num_iter_total: 100001
   # batch_size: 256
-  batch_size: 12
-  batch_size_test: 16
+  batch_size: 8
+  batch_size_test: 4
   target_has_input_p: 1.0
   l2_loss_weight: 1.0
   perceptual_loss_weight: 0.5
@@ -22,12 +22,12 @@ opt:
   hold_steps: 0
   lr_scheduler_iter: 100001
   cosine_min_range: 0.0
-  freeze_vggt: false
+  freeze_vggt: True
 
 model:
   model_type: regressive
   arch: 'EncDecVitB/8'
-  pretrained_vggt: true
+  pretrained_vggt: false
   attention_to_features_type: full_attention
 
 data:
@@ -45,15 +45,15 @@ data:
   - 1.0
   - 1.0
   im_size_hw:
-  - 256
-  - 256
+  - 64
+  - 64
   num_views: 10
   zero_out_cam_cond_p: 0.0
   num_tgt_views: 6
   view_to_sample_prob:
     - 2,1
 
-checkpoint_path : /home/jovyan/sungpyo/lagernvs/official_checkpoints/lagernvs_re10k_2v_256.pt
+checkpoint_path : /home/ksp/NVS/lagernvs_original/official_checkpoints/lagernvs_re10k_2v_256.pt
 
 test_data:
   dataset_names:
@@ -72,7 +72,7 @@ view_sampler:
   train_method: bounded_interp
   test_method: fixed
 
-log_dir: ./output/resize_256_64_patch4x4_vggt_freeze/
+log_dir: ./output/resize_256_64_patch4x4_stride2_vggt_freeze/
 
 eval:
   log_iter: 50

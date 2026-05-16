@@ -32,12 +32,16 @@ class PatchEmbed(nn.Module):
         norm_layer=None,
         flatten=True,
         bias=True,
+        stride=None,
+        padding=0,
     ):
         super().__init__()
         self.flatten = flatten
+        if stride is None:
+            stride = patch_size
 
         self.proj = nn.Conv2d(
-            in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias
+            in_chans, embed_dim, kernel_size=patch_size, stride=stride, padding=padding, bias=bias
         )
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 

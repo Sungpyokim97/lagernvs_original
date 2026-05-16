@@ -202,12 +202,8 @@ class BaseDataset(torch.utils.data.Dataset):
         )
         center_crop = T.CenterCrop(center_crop_dims)
         data_arrays = [center_crop(data_array) for data_array in data_arrays]
-        # 여기를 손보면 될것 같다 ㅋㅋ
-        # lr_tgt_hw = (math.ceil(tgt_hw[0] / 4), math.ceil(tgt_hw[1] / 4))
-        lr_tgt_hw = (64, 64)
         resize_fn = T.Resize(tgt_hw, interpolation=interpolation)
-        resize_lr_fn = T.Resize(lr_tgt_hw, interpolation=interpolation)
-        data_arrays = [resize_lr_fn(resize_fn(data_array)) for data_array in data_arrays]
+        data_arrays = [resize_fn(data_array) for data_array in data_arrays]
         data_arrays = torch.stack(data_arrays)
         
         # resizing can result in values outside 0-1
@@ -279,13 +275,8 @@ class BaseDataset(torch.utils.data.Dataset):
             images = self.crop_and_resize_data_arrays(images, orig_hw, tgt_hw)
 
             # read camera poses, adjusts for cropping dimensions
-            lr_tgt_hw = (64, 64)
-            # lr_tgt_hw = (128,128)
-            # lr_tgt_hw = (256,256)
-            # tgt_hw = (512,512)
             intrinsics_fxfycxcy_px_post_crop, c2w_poses = self.load_cameras(
-                # seq_name, frame_indices, orig_hw, tgt_hw
-                seq_name, frame_indices, orig_hw, lr_tgt_hw
+                seq_name, frame_indices, orig_hw, tgt_hw
             )
 
             if self.video_length > 0:
@@ -300,8 +291,7 @@ class BaseDataset(torch.utils.data.Dataset):
                     intrinsics_fxfycxcy_px_post_crop,
                     selected_timesteps,
                     num_cond_views,
-                    # tgt_hw,
-                    lr_tgt_hw,
+                    tgt_hw,
                 )
 
             (
@@ -327,10 +317,7 @@ class BaseDataset(torch.utils.data.Dataset):
             c2w_poses,
             intrinsics_fxfycxcy_px_post_crop,
             num_cond_views=num_cond_views,
-            # tgt_hw=tgt_hw,    #512*512
-            tgt_hw=(64, 64), #64*64
-            # tgt_hw=(128,128), #128*128
-            # tgt_hw=(256,256), #256*256
+            tgt_hw=tgt_hw,
             camera_scale=camera_scale,
             zero_out_cam_cond_p=self.zero_out_cam_cond_p,
             split=self.split,
