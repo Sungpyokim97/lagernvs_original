@@ -3,7 +3,8 @@ module: train
 seed: 0
 
 opt:
-  lr: 4e-4
+  # lr: 4e-4
+  lr: 2e-4
   weight_decay: 0.05
   num_iter_total: 100001
   # batch_size: 256

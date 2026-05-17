@@ -63,8 +63,8 @@ class EncoderDecoder(nn.Module):
         v_target = target_rays.shape[1]
 
         # Reconstructor 부분을 freeze (Gradient 계산 제외 및 eval 모드 강제)
-        freeze_reconstructor = True
-        # freeze_reconstructor = False
+        # freeze_reconstructor = True
+        freeze_reconstructor = False
         if freeze_reconstructor:
             with torch.no_grad():
                 self.reconstructor.eval()

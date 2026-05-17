@@ -112,8 +112,8 @@ def main(cfg) -> None:
     ).to(device)
 
     # Reconstructor 영역 파라미터 업데이트 제외 설정 Reconstructor 부분을 freeze (Gradient 계산 제외 및 eval 모드 강제)
-    freeze_reconstructor = True
-    # freeze_reconstructor = False
+    # freeze_reconstructor = True
+    freeze_reconstructor = False
     if freeze_reconstructor:
         for param in model.reconstructor.parameters():
             param.requires_grad = False
@@ -169,8 +169,7 @@ def main(cfg) -> None:
     start_iter = load_checkpoint(cfg, model, optimizer, scheduler)
 
     print(f"Training model on rank {cfg.rank}", force=True)
-    unfreeze_step = cfg.opt.get("unfreeze_step", 5000)
-
+    unfreeze_step = cfg.opt.get("unfreeze_step", 10000)  # iteration at which to unfreeze the Renderer layers (if using dynamic freezing)
     for iter_idx in range(start_iter, cfg.opt.num_iter_total):
         train_batch, data_iter, epoch_idx = get_next_batch(
             data_iter, dataset, epoch_idx, device
@@ -188,12 +187,12 @@ def main(cfg) -> None:
                 # model.module (DDP) / model (single)
                 target_renderer = model.module.renderer if hasattr(model, "module") else model.renderer
                 for name, param in target_renderer.named_parameters():
-                    if "4x4" not in name:
+                    if "2x2" not in name:
                         param.requires_grad = False
             else:
                 target_renderer = model.module.renderer if hasattr(model, "module") else model.renderer
                 for name, param in target_renderer.named_parameters():
-                    if "4x4" not in name:
+                    if "2x2" not in name:
                         param.requires_grad = True
 
         loss_dict, image_ids_train = _train_step(
