@@ -42,13 +42,13 @@ class Renderer(nn.Module):
         # patch 가 4일땐 사용 안함
         self.tgt_embedder = PatchEmbed(self.patch_size, tgt_ch, hidden_size, bias=False, stride=self.patch_size)
         # patch size 가 4 일때 사용
-        self.tgt_embedder_2x2 = PatchEmbed(2, tgt_ch, hidden_size, bias=False, stride=2)
+        self.tgt_embedder_4x4 = PatchEmbed(4, tgt_ch, hidden_size, bias=False, stride=4)
 
         # New IPE (Scale-aware Fourier features) branch
         self.num_freqs = 6
         ipe_ch = 6 * self.num_freqs * 2 + 2 # +2 for cell size (w, h)
         # self.ipe_embedder = PatchEmbed(self.patch_size, ipe_ch, hidden_size, bias=False, stride=self.patch_size//2, padding=self.patch_size//4)
-        # self.ipe_embedder_4x4 = PatchEmbed(4, ipe_ch, hidden_size, bias=False, stride=2, padding=1)
+        self.ipe_embedder_4x4 = PatchEmbed(4, ipe_ch, hidden_size, bias=False, stride=4, padding=1)
 
         self.tgt_norm = nn.LayerNorm(hidden_size, bias=pre_transformer_norm_bias)
 
@@ -83,9 +83,9 @@ class Renderer(nn.Module):
             patch_size=self.patch_size,
             out_channels=self.out_channels,
         )
-        self.final_layer_2x2 = FinalLayer(
+        self.final_layer_4x4 = FinalLayer(
             hidden_size=hidden_size,
-            patch_size=2,
+            patch_size=4,
             out_channels=self.out_channels,
         )
         self.output_act = nn.Sigmoid()
@@ -101,28 +101,28 @@ class Renderer(nn.Module):
         if self.tgt_embedder.proj.bias is not None:
             nn.init.constant_(self.tgt_embedder.proj.bias, 0)
             
-        wc_2x2 = self.tgt_embedder_2x2.proj.weight.data
-        nn.init.normal_(wc_2x2.view([wc_2x2.shape[0], -1]), mean=0.0, std=0.02)
-        if self.tgt_embedder_2x2.proj.bias is not None:
-            nn.init.constant_(self.tgt_embedder_2x2.proj.bias, 0)
+        wc_4x4 = self.tgt_embedder_4x4.proj.weight.data
+        nn.init.normal_(wc_4x4.view([wc_4x4.shape[0], -1]), mean=0.0, std=0.02)
+        if self.tgt_embedder_4x4.proj.bias is not None:
+            nn.init.constant_(self.tgt_embedder_4x4.proj.bias, 0)
 
-            # wc_ipe = self.ipe_embedder.proj.weight.data
-            # nn.init.normal_(wc_ipe.view([wc_ipe.shape[0], -1]), mean=0.0, std=0.02)
-            # if self.ipe_embedder.proj.bias is not None:
-            #     nn.init.constant_(self.ipe_embedder.proj.bias, 0)
-                
-            # wc_ipe_4x4 = self.ipe_embedder_4x4.proj.weight.data
-            # nn.init.normal_(wc_ipe_4x4.view([wc_ipe_4x4.shape[0], -1]), mean=0.0, std=0.02)
-            # if self.ipe_embedder_4x4.proj.bias is not None:
-            #     nn.init.constant_(self.ipe_embedder_4x4.proj.bias, 0)
+        # wc_ipe = self.ipe_embedder.proj.weight.data
+        # nn.init.normal_(wc_ipe.view([wc_ipe.shape[0], -1]), mean=0.0, std=0.02)
+        # if self.ipe_embedder.proj.bias is not None:
+        #     nn.init.constant_(self.ipe_embedder.proj.bias, 0)
+            
+        wc_ipe_4x4 = self.ipe_embedder_4x4.proj.weight.data
+        nn.init.normal_(wc_ipe_4x4.view([wc_ipe_4x4.shape[0], -1]), mean=0.0, std=0.02)
+        if self.ipe_embedder_4x4.proj.bias is not None:
+            nn.init.constant_(self.ipe_embedder_4x4.proj.bias, 0)
 
         nn.init.constant_(self.final_layer.linear.weight, 0)
         if self.final_layer.linear.bias is not None:
             nn.init.constant_(self.final_layer.linear.bias, 0)
             
-        nn.init.constant_(self.final_layer_2x2.linear.weight, 0)
-        if self.final_layer_2x2.linear.bias is not None:
-            nn.init.constant_(self.final_layer_2x2.linear.bias, 0)
+        nn.init.constant_(self.final_layer_4x4.linear.weight, 0)
+        if self.final_layer_4x4.linear.bias is not None:
+            nn.init.constant_(self.final_layer_4x4.linear.bias, 0)
 
     def compute_ipe(self, rays, cell, b, v_target):
         import math
@@ -173,10 +173,10 @@ class Renderer(nn.Module):
         # Use 4x4 embedder for 64x64 targets to maintain spatial dims, 
         # else use default patch size
         if h_tgt == 64 and w_tgt == 64:
-            target_tokens = self.tgt_embedder_2x2(target_rays)
-            # target_tokens_ipe = self.ipe_embedder_2x2(ipe_rays)
-            # target_tokens = target_tokens_base + target_tokens_ipe
-            current_patch_size = 2
+            target_tokens_base = self.tgt_embedder_4x4(target_rays)
+            target_tokens_ipe = self.ipe_embedder_4x4(ipe_rays)
+            target_tokens = target_tokens_base + target_tokens_ipe
+            current_patch_size = 4
         else:
             target_tokens_base = self.tgt_embedder(target_rays)
             target_tokens_ipe = self.ipe_embedder(ipe_rays)
@@ -199,7 +199,7 @@ class Renderer(nn.Module):
         # start srno frome here
 
         if h_tgt == 64 and w_tgt == 64:
-            x = self.final_layer_2x2(x)
+            x = self.final_layer_4x4(x)
         else:
             x = self.final_layer(x)
             

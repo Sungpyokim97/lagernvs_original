@@ -113,10 +113,10 @@ def main(cfg) -> None:
 
     # Reconstructor 영역 파라미터 업데이트 제외 설정 Reconstructor 부분을 freeze (Gradient 계산 제외 및 eval 모드 강제)
     # freeze_reconstructor = True
-    freeze_reconstructor = False
-    if freeze_reconstructor:
-        for param in model.reconstructor.parameters():
-            param.requires_grad = False
+    # freeze_reconstructor = False
+    # if freeze_reconstructor:
+    #     for param in model.reconstructor.parameters():
+    #         param.requires_grad = False
 
     if cfg.distributed:
         model = torch.nn.parallel.DistributedDataParallel(

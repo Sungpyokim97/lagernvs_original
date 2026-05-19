@@ -67,9 +67,9 @@ class EncoderDecoder(nn.Module):
         freeze_reconstructor = False
         if freeze_reconstructor:
             with torch.no_grad():
-                self.reconstructor.eval()
-                rec_tokens = self.reconstructor(input_images, cam_token)
-            rec_tokens = rec_tokens.detach()
+                # self.reconstructor.eval()
+                rec_tokens = self.reconstructor(input_images, cam_token).detach()
+            # rec_tokens = rec_tokens.detach()
         else:
             rec_tokens = self.reconstructor(input_images, cam_token)
             
