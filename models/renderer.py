@@ -140,7 +140,7 @@ class Renderer(nn.Module):
         freq_squared = freq_bands.view(1, 1, 1, 1, -1) ** 2
         var_scaled = cell_var * freq_squared
         attenuation = torch.exp(-0.5 * var_scaled)
-            
+        
         sin_enc = torch.sin(rays_exp) * attenuation
         cos_enc = torch.cos(rays_exp) * attenuation
         

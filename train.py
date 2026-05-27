@@ -178,7 +178,8 @@ def main(cfg) -> None:
         # train_batch의 첫 번째 원소(images)의 height/width가 64인지 확인합니다.
         # images.shape: (B, V, C, H, W)
         images = train_batch[0]
-        apply_freeze = (images.shape[-1] == 64)
+        # apply_freeze = (images.shape[-1] == 64)
+        apply_freeze = False
 
         # input size가 64x64 인 경우에만 freeze/unfreeze 적용
         if apply_freeze:

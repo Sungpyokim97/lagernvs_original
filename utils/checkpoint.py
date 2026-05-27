@@ -147,10 +147,25 @@ def load_checkpoint(
 
         checkpoint = torch.load(resolved_path, map_location="cpu", weights_only=False)
         _load_model_from_checkpoint(checkpoint, model, strict)
-        start_iter = checkpoint.get("iter_idx", -1) + 1
+        source_iter = checkpoint.get("iter_idx", -1)
+        start_iter = source_iter + 1
+
+        # Foreign-checkpoint init: optimizer state is intentionally NOT loaded
+        # (carrying over momentum from a different run usually hurts fine-tuning).
+        # Sync scheduler.last_epoch with the source iter so LambdaLR keeps
+        # evaluating LR at the right position on the curve instead of restarting
+        # from warmup at step 0.
+        if not test_only and scheduler is not None and source_iter >= 0:
+            scheduler.last_epoch = source_iter
+            scheduler._last_lr = [
+                group["lr"] for group in scheduler.optimizer.param_groups
+            ]
 
         if misc.is_main_process():
-            print(f"Successfully loaded checkpoint from {explicit_path}")
+            print(
+                f"Successfully loaded checkpoint from {explicit_path} "
+                f"(start_iter={start_iter}, scheduler.last_epoch={getattr(scheduler, 'last_epoch', None)})"
+            )
 
     else:
         checkpoint_dir = os.path.join(cfg.log_dir, "checkpoints")
@@ -161,17 +176,33 @@ def load_checkpoint(
             checkpoint = torch.load(latest_path, map_location="cpu", weights_only=False)
             _load_model_from_checkpoint(checkpoint, model, strict)
 
+            saved_iter = checkpoint.get("iter_idx", -1)
             if not test_only:
                 if "optimizer" in checkpoint and optimizer is not None:
                     optimizer.load_state_dict(checkpoint["optimizer"])
                 if "scheduler" in checkpoint and scheduler is not None:
                     scheduler.load_state_dict(checkpoint["scheduler"])
+                    # Force scheduler.last_epoch to track iter_idx. Guards against
+                    # stale scheduler state from past runs that loaded only weights
+                    # (e.g. foreign-checkpoint init) and let last_epoch drift away
+                    # from the true iteration count.
+                    if saved_iter >= 0 and scheduler.last_epoch != saved_iter:
+                        if misc.is_main_process():
+                            print(
+                                f"[checkpoint] Syncing scheduler.last_epoch "
+                                f"{scheduler.last_epoch} -> {saved_iter} to match iter_idx"
+                            )
+                        scheduler.last_epoch = saved_iter
+                        scheduler._last_lr = [
+                            group["lr"] for group in scheduler.optimizer.param_groups
+                        ]
 
-            start_iter = checkpoint.get("iter_idx", -1) + 1
+            start_iter = saved_iter + 1
 
             if misc.is_main_process():
                 print(
-                    f"Resuming from checkpoint loaded from {latest_path} at iteration {start_iter}"
+                    f"Resuming from checkpoint loaded from {latest_path} at iteration {start_iter} "
+                    f"(scheduler.last_epoch={getattr(scheduler, 'last_epoch', None)})"
                 )
         else:
             if misc.is_main_process():

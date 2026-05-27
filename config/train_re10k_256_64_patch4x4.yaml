@@ -3,10 +3,10 @@ module: train
 seed: 0
 
 opt:
-  # lr: 4e-4
-  lr: 4e-4
+  lr: 1e-4
+  # lr: 4e-6
   weight_decay: 0.05
-  num_iter_total: 100001
+  num_iter_total: 300001
   # batch_size: 256
   batch_size: 8
   batch_size_test: 4
@@ -20,9 +20,11 @@ opt:
   - 0.95
   lr_scheduler: cosine
   warmup_steps: 3000
+  # warmup_steps: 0
   hold_steps: 0
   lr_scheduler_iter: 100001
-  cosine_min_range: 0.0
+  # cosine_min_range: 4e-6
+  cosine_min_range: 0
   freeze_vggt: True
 
 model:
@@ -55,8 +57,12 @@ data:
   view_to_sample_prob:
     - 2,1
 
-checkpoint_path : /home/ksp/NVS/lagernvs_original/official_checkpoints/lagernvs_re10k_2v_256.pt
-
+# checkpoint_path : /home/ksp/NVS/lagernvs_original/official_checkpoints/lagernvs_re10k_2v_256.pt
+# checkpoint_path : /home/ksp/NVS/lagernvs_original/output/resize_256_64_patch4x4_ipe_vggt_freeze_finetune/re10k_train/checkpoints/checkpoint_latest.pt
+checkpoint_path : /home/ksp/NVS/lagernvs_original/output/resize_256_64_patch4x4_ipe_vggt_freeze_finetune/re10k_train/checkpoints/checkpoint_0260000.pt
+# Set checkpoint_path to load model weights from a foreign checkpoint (fine-tune init).
+# For same-experiment resume, leave this commented — Priority 2 picks up checkpoint_latest.pt
+# from log_dir automatically and restores optimizer/scheduler/iter_idx.
 test_data:
   dataset_names:
   - re10k
@@ -74,7 +80,7 @@ view_sampler:
   train_method: bounded_interp
   test_method: fixed
 
-log_dir: ./output/resize_256_64_patch4x4_ipe_vggt_freeze/
+log_dir: ./output/resize_256_64_patch4x4_ipe_vggt_freeze_finetune/
 
 eval:
   log_iter: 50
