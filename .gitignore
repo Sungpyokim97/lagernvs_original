@@ -1,8 +1,11 @@
 # ==================================
 # 1. Output & Pretrained Weights
 # ==================================
-output/
-pretrained/
+# no trailing slash → also matches symlinks named like these (output, pretrained,
+# official_checkpoints here are symlinks to /hdd2/..., and "dir/" patterns skip symlinks)
+output
+pretrained
+official_checkpoints
 *.pt
 *.pth
 *.ckpt

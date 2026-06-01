@@ -30,8 +30,8 @@ opt:
 model:
   model_type: regressive
   arch: 'EncDecVitB/8'
-  # pretrained_vggt: true
-  pretrained_vggt: false
+  pretrained_vggt: true
+  # pretrained_vggt: false
   attention_to_features_type: full_attention
 
 data:
